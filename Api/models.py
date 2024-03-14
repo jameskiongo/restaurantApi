@@ -6,12 +6,18 @@ class Category(models.Model):
     slug = models.SlugField()
     title = models.CharField(max_length=255, db_index=True)
 
+    def __str__(self):
+        return self.title
+
 
 class MenuItem(models.Model):
     title = models.CharField(max_length=255, db_index=True)
     price = models.DecimalField(max_digits=6, decimal_places=2, db_index=True)
     featured = models.BooleanField(db_index=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return self.title
 
 
 class Cart(models.Model):
@@ -22,7 +28,7 @@ class Cart(models.Model):
     price = models.DecimalField(max_digits=6, decimal_places=2)
 
     class Meta:
-        unique_together = {"menuitem", "user"}
+        unique_together = ["menuitem", "user"]
 
 
 class Order(models.Model):
@@ -43,4 +49,4 @@ class OrderItem(models.Model):
     price = models.DecimalField(max_digits=6, decimal_places=2)
 
     class Meta:
-        unique_together = {"order", "menuitem"}
+        unique_together = ["order", "menuitem"]
