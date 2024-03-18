@@ -111,51 +111,33 @@ class ManagerPermission(BasePermission):
 
 
 class UserView(viewsets.ViewSet):
-    # queryset = User.objects.all()
-    # serializer_class = UserSerializer
     permission_classes = [ManagerPermission]
 
     def list(self, request):
-        # users = User.objects.all()
         users = User.objects.filter(groups__name="managers")
         items = UserSerializer(users, many=True)
         return Response(items.data)
 
-    # manager = request.user.groups.filter(name="managers")
-    # if manager.exists():
-    #     users = User.objects.all().filter(groups="manager")
-    #     if users.exists():
-    #         serializer_items = UserSerializer(users, many=True)
-    #         return Response(serializer_items.data)
-    #     return []
-    #
-    # return Response(
-    #     {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
-    # )
-    #
+    def create(self, request):
+        name = request.data["Username"]
+        user = get_object_or_404(User, username=name)
+        # account = request.user.groups.filter(name="managers")
+        # group = Group.objects.get(name="managers")
+        group = User.objects.filter(groups__name="managers")
+        if user in group:
+            return Response({"Message": "User already in group"})
+        managers = Group.objects.get(name="managers")
+        managers.user_set.add(user)
+        return Response({"Message": "User added to manager group"}, status.HTTP_200_OK)
 
+    def destroy(self, request):
+        user = get_object_or_404(User, username=request.data["Username"])
 
-@api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated])
-def user_view(request):
-    if request.method == "GET":
-        manager = request.user.groups.filter(name="managers")
-        if manager.exists():
-            managers = User.objects.all().filter(groups="manager")
-            if managers.exists():
-                serializer_items = UserSerializer(managers, many=True)
-                return Response(serializer_items.data)
-            return []
+        group = User.objects.filter(groups__name="managers")
+        if user not in group:
+            return Response({"Message": "Already removed"})
+        managers = Group.objects.get(name="managers")
+        managers.user_set.remove(user)
         return Response(
-            {"Message": "You don't have authorization"}, status.HTTP_401_UNAUTHORIZED
+            {"Message": "User removed from manager group"}, status.HTTP_200_OK
         )
-    # if request.method == "POST":
-    #     manager = request.user.groups.filter(name="managers").exists()
-    #     if manager:
-    #         serializer_items = MenuItemSerializer(data=request.data)
-    #         serializer_items.is_valid(raise_exception=True)
-    #         serializer_items.save()
-    #         return Response(serializer_items.data, status.HTTP_201_CREATED)
-    #     return Response(
-    #         {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
-    #     )
