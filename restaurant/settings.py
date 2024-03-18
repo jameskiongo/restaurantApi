@@ -137,8 +137,11 @@ SIMPLE_JWT = {
     ),
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=100),
 }
 DJOSER = {
     "USER_ID_FIELD": "username",
+}
+USER_DETAILS_SERIALIZER = {
+    "USER_DETAILS_SERIALIZER": "users.serializers.UserSerializer"
 }

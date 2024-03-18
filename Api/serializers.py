@@ -4,6 +4,12 @@ from rest_framework import serializers
 from .models import Cart, Category, MenuItem, Order, OrderItem
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["username", "email"]
+
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -20,25 +26,18 @@ class MenuItemSerializer(serializers.ModelSerializer):
 
 
 class CartItemSerializer(serializers.ModelSerializer):
-    # menu_item = MenuItemSerializer(read_only=True)
-    user = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(), default=serializers.CurrentUserDefault
+    menu_item = MenuItemSerializer(read_only=True)
+    user = UserSerializer(
+        many=False, read_only=True, default=serializers.CurrentUserDefault()
     )
-
-    # user_id = serializers.IntegerField(write_only=True)
-    def validate(self, attrs):
-        attrs["price"] = attrs["quantity"] * attrs["unit_price"]
-        return attrs
+    price = serializers.SerializerMethodField(method_name="calculate_price")
 
     class Meta:
         model = Cart
-        fields = [
-            "user",
-            "menuitem",
-            "quantity",
-            "unit_price",
-            "price",
-        ]
+        fields = ["user", "menu_item", "quantity", "price"]
+        extra_kwargs = {
+            "quantity": {"min_value": 1},
+        }
 
-    def calculate_price(self, unit_price, quantity):
-        return unit_price * quantity
+    def calculate_price(self, price, quantity: Cart):
+        return price * quantity.menuitem
