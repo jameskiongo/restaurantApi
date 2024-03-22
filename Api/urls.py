@@ -5,6 +5,16 @@ from . import views
 urlpatterns = [
     path("menu-items/<int:pk>/", views.SingleMenuItemView.as_view()),
     path(
+        "cart/menu-items/",
+        views.CartItemView.as_view(
+            {
+                "get": "list",
+                "post": "create",
+                "delete": "destroy",
+            }
+        ),
+    ),
+    path(
         "menu-items/",
         views.MenuItemView.as_view(
             {

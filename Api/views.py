@@ -1,17 +1,18 @@
+# from auth.custom_permissions import CustomerPermission, ManagerPermission
 from django.contrib.auth.models import Group, User
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, status, viewsets
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import (
-    BasePermission,
-    IsAdminUser,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
+
+# from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
+from .custom_permissions import CustomerPermission, ManagerPermission
 from .models import Cart, Category, MenuItem, Order, OrderItem
 from .serializers import CartItemSerializer, MenuItemSerializer, UserSerializer
+
+# from rest_framework.decorators import api_view
+
 
 #
 # @api_view(["GET", "POST"])
@@ -79,20 +80,39 @@ class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
         return Response({"message": "Updated Successfully"})
 
 
-class ManagerPermission(BasePermission):
-    """
-    Global permission check for blocked IPs.
-    """
+class CartItemView(viewsets.ViewSet):
+    permission_classes = [CustomerPermission]
 
-    def has_permission(self, request, view):
-        user = request.user
-        # managers = user.groups.filter(group__name="managers")
-        # managers = User.objects.all().filter(groups__name="manager")
-        # managers = Group.objects.all().filter(name="managers")
-        if user and user.groups.filter(name="managers").exists():
-            return True
+    def list(self, request):
+        user = self.request.user
+        items = Cart.objects.filter(user=user)
+        if items:
+            serializer_items = CartItemSerializer(items, many=True)
+            return Response(serializer_items.data)
+        return Response({"Message": "Add Items to Cart"})
 
-        return False
+    def create(self, request):
+        item = request.data.get("Menu Item")
+        menuitems = MenuItem.objects.filter(title=item)
+        if menuitems.exists():
+            # choose_item = get_object_or_404(Cart, menuitem__title=item)
+            # choose_item = Cart.objects.get(menuitem__title=item)
+            # user = self.request.user
+            # user.user_set.add(choose_item)
+            # user.add(choose_item)
+            # serializer_items = CartItemSerializer(choose_item)
+            # serializer_items.is_valid(raise_exception=True)
+            # serializer_items.save()
+            return Response("Ok")
+        return Response({"Message": "Item not in Menu"}, status.HTTP_404_NOT_FOUND)
+
+    def destroy(self, request):
+        user = self.request.user
+        items = Cart.objects.filter(user=user)
+        if items:
+            items.delete()
+            return Response({"Message": "Deleted All Successfully"}, status.HTTP_200_OK)
+        return Response({"Message": "Add Items to Cart"})
 
 
 class UserManagerView(viewsets.ViewSet):

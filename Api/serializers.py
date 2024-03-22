@@ -26,15 +26,16 @@ class MenuItemSerializer(serializers.ModelSerializer):
 
 
 class CartItemSerializer(serializers.ModelSerializer):
-    menu_item = MenuItemSerializer(read_only=True)
+    # menuitem = MenuItemSerializer(read_only=True, many=True)
+    menuitem = serializers.CharField(read_only=True)
     user = UserSerializer(
         many=False, read_only=True, default=serializers.CurrentUserDefault()
     )
-    price = serializers.SerializerMethodField(method_name="calculate_price")
+    # price = serializers.SerializerMethodField(method_name="calculate_price")
 
     class Meta:
         model = Cart
-        fields = ["user", "menu_item", "quantity", "price"]
+        fields = ["user", "menuitem", "quantity", "price"]
         extra_kwargs = {
             "quantity": {"min_value": 1},
         }
