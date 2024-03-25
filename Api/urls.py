@@ -43,4 +43,12 @@ urlpatterns = [
             }
         ),
     ),
+    path(
+        "orders/",
+        views.OrderView.as_view(
+            {
+                "get": "list",
+            }
+        ),
+    ),
 ]

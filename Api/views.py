@@ -9,7 +9,12 @@ from rest_framework.response import Response
 
 from .custom_permissions import CustomerPermission, ManagerPermission
 from .models import Cart, Category, MenuItem, Order, OrderItem
-from .serializers import CartItemSerializer, MenuItemSerializer, UserSerializer
+from .serializers import (
+    CartItemSerializer,
+    MenuItemSerializer,
+    OrderItemSerializer,
+    UserSerializer,
+)
 
 # from rest_framework.decorators import api_view
 
@@ -81,6 +86,7 @@ class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CartItemView(viewsets.ViewSet):
+    queryset = Cart.objects.all()
     permission_classes = [CustomerPermission]
 
     def list(self, request):
@@ -91,10 +97,11 @@ class CartItemView(viewsets.ViewSet):
             return Response(serializer_items.data)
         return Response({"Message": "Add Items to Cart"})
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         item = request.data.get("Menu Item")
         menuitems = MenuItem.objects.filter(title=item)
-        if menuitems.exists():
+        if not menuitems.exists():
+            return Response({"Message": "Item not in Menu"}, status.HTTP_404_NOT_FOUND)
             # choose_item = get_object_or_404(Cart, menuitem__title=item)
             # choose_item = Cart.objects.get(menuitem__title=item)
             # user = self.request.user
@@ -103,8 +110,12 @@ class CartItemView(viewsets.ViewSet):
             # serializer_items = CartItemSerializer(choose_item)
             # serializer_items.is_valid(raise_exception=True)
             # serializer_items.save()
-            return Response("Ok")
-        return Response({"Message": "Item not in Menu"}, status.HTTP_404_NOT_FOUND)
+            # return Response("Ok")
+        # return Response({"Message": "Item not in Menu"}, status.HTTP_404_NOT_FOUND)
+        serializer_items = CartItemSerializer(data=request.data)
+        serializer_items.is_valid(raise_exception=True)
+        serializer_items.save(menuitems=menuitems)
+        return Response(serializer_items.data, status.HTTP_201_CREATED)
 
     def destroy(self, request):
         user = self.request.user
@@ -179,3 +190,13 @@ class UserDeliveryView(viewsets.ViewSet):
         return Response(
             {"Message": "User removed from delivery crew"}, status.HTTP_200_OK
         )
+
+
+class OrderView(viewsets.ViewSet):
+    permission_classes = [CustomerPermission]
+
+    def list(self, request):
+        user = self.request.user
+        orders = Order.objects.filter(user=user)
+        serializer_items = OrderItemSerializer(orders, many=True)
+        return Response(serializer_items.data)

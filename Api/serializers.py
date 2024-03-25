@@ -42,3 +42,13 @@ class CartItemSerializer(serializers.ModelSerializer):
 
     def calculate_price(self, price, quantity: Cart):
         return price * quantity.menuitem
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    user = UserSerializer(
+        many=False, read_only=True, default=serializers.CurrentUserDefault()
+    )
+
+    class Meta:
+        model = Order
+        fields = ["user", "delivery_crew", "status", "total", "date"]
